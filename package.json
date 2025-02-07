@@ -1,7 +1,7 @@
 {
-  "name": "bitcoin-well-to-koinly",
+  "name": "btcw-to-koinly",
   "version": "1.0.0",
-  "description": "Convert Bitcoin Well CSVs into Koinly-compatible format",
+  "description": "Convert Bitcoin Well CSVs into a Koinly-compatible format",
   "main": "index.js",
   "scripts": {
     "dev": "vite",
@@ -9,9 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "papaparse": "^5.3.2",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "papaparse": "^5.3.2"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "vite": "^4.0.0",
