@@ -215,7 +215,7 @@ const App: React.FC = () => {
           <textarea value={koinlyCsv} readOnly rows={10} style={{ width: "100%" }} />
         </div>
       )}
-      <p style={{ marginTop: "1rem" }}>Converter by <a href="https://bitcoinwell.com/referral/bones" target="_blank">Bitcoin Bones 🦴</a></p>
+      <p style={{ marginTop: "1rem", fontSize: "smaller" }}>Converter by <a href="https://bitcoinwell.com/referral/bones" target="_blank">Bitcoin Bones 🦴</a> | <a href="https://github.com/RyleaStark/bitcoin-well-to-koinly" target="_blank">GitHub Repo</a><br/><span style={{ color: "gray" }}>Did I save you some time? Tip Lightning bones@zapme.ca</span></p>
     </div>
   );
 };
