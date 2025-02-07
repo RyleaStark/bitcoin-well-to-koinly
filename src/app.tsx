@@ -35,12 +35,34 @@ interface KoinlyRow {
   "TxHash": string;
 }
 
+/**
+ * Helper function to convert a date string from Mountain Time (assumed MST, UTC-7) 
+ * to a UTC formatted string.
+ * 
+ * Assumes the input is in the format "YYYY-MM-DD HH:mm:ss".
+ * Output is formatted as "YYYY-MM-DD HH:mm UTC" (without seconds).
+ */
+const convertMountainTimeToUTC = (dateStr: string): string => {
+  // Replace the space with 'T' and append the Mountain Time offset (-07:00)
+  const isoDateStr = dateStr.replace(' ', 'T') + "-07:00";
+  const date = new Date(isoDateStr);
+  
+  // Format the UTC date components
+  const year = date.getUTCFullYear();
+  const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+  const day = date.getUTCDate().toString().padStart(2, '0');
+  const hours = date.getUTCHours().toString().padStart(2, '0');
+  const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+  
+  return `${year}-${month}-${day} ${hours}:${minutes} UTC`;
+};
+
 const App: React.FC = () => {
-  // State to hold the generated CSV and any errors encountered
+  // State for the generated CSV and any error messages
   const [koinlyCsv, setKoinlyCsv] = useState<string>('');
   const [error, setError] = useState<string>('');
 
-  // Called when the user selects a CSV file for upload
+  // Handles CSV file upload and parsing using PapaParse
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError('');
     const file = e.target.files?.[0];
@@ -49,7 +71,6 @@ const App: React.FC = () => {
       return;
     }
 
-    // Use PapaParse to parse the uploaded CSV file
     Papa.parse<BitcoinWellRow>(file, {
       header: true,
       skipEmptyLines: true,
@@ -60,11 +81,11 @@ const App: React.FC = () => {
           return;
         }
         const data = results.data;
-        // Filter out swap orders (ignore rows where Order Type includes "swap")
+        // Ignore rows with swap orders
         const filteredData = data.filter(
           (row) => !row["Order Type"].toLowerCase().includes("swap")
         );
-        // Convert each Bitcoin Well row into a Koinly row
+        // Convert each remaining Bitcoin Well row to a Koinly row
         const convertedRows = filteredData.map(convertRow);
         // Generate the CSV string from the converted rows
         const csv = generateKoinlyCsv(convertedRows);
@@ -73,15 +94,17 @@ const App: React.FC = () => {
     });
   };
 
-  // Converts a single Bitcoin Well row to a Koinly row based on order type
+  // Converts a single Bitcoin Well row to a Koinly row,
+  // converting the date from Mountain Time to UTC.
   const convertRow = (row: BitcoinWellRow): KoinlyRow => {
+    // Convert date from Mountain Time to UTC format
+    const date = convertMountainTimeToUTC(row["Order Date"]);
     const orderType = row["Order Type"].toLowerCase();
-    const date = row["Order Date"];
     const txHash = row["Transaction Hash"] || "";
-    // Use Miner Fee if provided and not "-", otherwise leave blank
+    // Use the Miner Fee if provided and not "-", else leave blank
     const feeAmount = (row["Miner Fee"] && row["Miner Fee"] !== "-") ? row["Miner Fee"] : "";
 
-    // Map Buy orders: spend fiat to receive crypto
+    // For buy orders: fiat is sent and crypto is received
     if (orderType.includes("buy")) {
       return {
         "Date": date,
@@ -97,8 +120,8 @@ const App: React.FC = () => {
         "Description": "",
         "TxHash": txHash
       };
-    }
-    // Map Sell orders: send crypto to receive fiat
+    } 
+    // For sell orders: crypto is sent and fiat is received
     else if (orderType.includes("sell")) {
       return {
         "Date": date,
@@ -115,7 +138,7 @@ const App: React.FC = () => {
         "TxHash": txHash
       };
     }
-    // Default mapping: similar to a Buy order (should rarely be hit)
+    // Default mapping (should rarely occur)
     else {
       return {
         "Date": date,
@@ -134,7 +157,7 @@ const App: React.FC = () => {
     }
   };
 
-  // Generates a CSV string from the array of Koinly rows using the correct header order
+  // Generates a CSV string from an array of Koinly rows, ensuring proper escaping
   const generateKoinlyCsv = (rows: KoinlyRow[]): string => {
     const headers = [
       "Date",
@@ -155,7 +178,7 @@ const App: React.FC = () => {
     rows.forEach((row) => {
       const rowValues = headers.map((header) => {
         const value = (row as any)[header] ?? "";
-        // Escape commas and quotes in values
+        // Escape commas and quotes as needed
         if (typeof value === "string" && (value.includes(",") || value.includes('"'))) {
           return `"${value.replace(/"/g, '""')}"`;
         }
@@ -167,7 +190,7 @@ const App: React.FC = () => {
     return csvRows.join("\n");
   };
 
-  // Initiates download of the generated CSV file
+  // Triggers download of the generated CSV file
   const downloadCsv = () => {
     const blob = new Blob([koinlyCsv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -192,6 +215,7 @@ const App: React.FC = () => {
           <textarea value={koinlyCsv} readOnly rows={10} style={{ width: "100%" }} />
         </div>
       )}
+      <p style={{ marginTop: "1rem" }}>Converter by <a href="https://bitcoinwell.com/referral/bones" target="_blank">Bitcoin Bones 🦴</a></p>
     </div>
   );
 };
